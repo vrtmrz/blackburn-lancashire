@@ -1,8 +1,249 @@
-/*
+.blackburn-root {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	gap: 16px;
+	padding: 16px;
+}
 
-This CSS file will be included with your plugin, and
-available in the app when your plugin is enabled.
+.blackburn-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
 
-If your plugin does not need CSS, delete this file.
+.blackburn-toolbar-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
 
-*/
+.blackburn-toggle-search-label {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.blackburn-toggle-search-checkbox {
+	margin: 0;
+	cursor: pointer;
+}
+
+.blackburn-toolbar-title {
+	font-weight: 600;
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.blackburn-toolbar-content {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.blackburn-toolbar-content.is-hidden {
+	display: none;
+}
+
+.blackburn-toolbar-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 12px;
+	align-items: center;
+	width: 100%;
+}
+
+.blackburn-search {
+	flex: 1;
+	min-width: 0;
+}
+
+.blackburn-date-filter-container {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1;
+}
+
+.blackburn-date-filter {
+	flex: 1;
+}
+
+.blackburn-filter-label {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+.blackburn-select {
+	flex: 0 0 auto;
+}
+
+.blackburn-checkbox {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.blackburn-status,
+.blackburn-end,
+.blackburn-empty {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	text-align: center;
+	padding: 12px 0;
+}
+
+.blackburn-list {
+	overflow-y: auto;
+	padding-right: 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.blackburn-entry,
+.blackburn-day-expanded {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	padding: 16px;
+	background: var(--background-primary);
+	transition: background-color 0.2s ease;
+}
+
+.blackburn-entry:hover {
+	background-color: var(--background-primary-alt);
+}
+
+.blackburn-entry.is-expired {
+	opacity: 0.5;
+	background: var(--background-secondary);
+}
+
+.blackburn-entry.is-matched {
+	border-color: var(--interactive-accent);
+}
+
+.blackburn-date-header {
+	margin: 24px 0 12px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid var(--background-modifier-border-focus);
+}
+
+.blackburn-date-group-label {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	user-select: none;
+	width: fit-content;
+}
+
+.blackburn-date-group-checkbox {
+	margin: 0;
+	cursor: pointer;
+}
+
+.blackburn-date-group-text {
+	font-weight: 700;
+	font-size: 1.2em;
+	color: var(--text-normal);
+	line-height: 1.2;
+}
+
+.blackburn-date-group-label:hover .blackburn-date-group-text {
+	color: var(--interactive-accent);
+}
+.blackburn-entry-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.blackburn-time {
+	font-weight: 600;
+	color: var(--text-accent);
+}
+
+.blackburn-updated,
+.blackburn-expired {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.blackburn-body {
+	margin: 0;
+	white-space: pre-wrap;
+	font-family: var(--font-text);
+	line-height: 1.5;
+	font-size: var(--font-text-size);
+	color: var(--text-normal);
+}
+
+.blackburn-menu-button {
+	margin-left: auto;
+	background: transparent;
+	border: none;
+	padding: 4px;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-muted);
+}
+
+.blackburn-menu-button:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.blackburn-day-expanded {
+	margin-left: 24px;
+	background: var(--background-secondary-alt);
+}
+
+.blackburn-day-title {
+	font-weight: 700;
+	margin-bottom: 12px;
+	font-size: var(--font-ui-medium);
+	color: var(--text-normal);
+}
+
+.blackburn-day-entry {
+	border-top: 1px solid var(--background-modifier-border);
+	padding: 12px 0;
+}
+
+.blackburn-day-entry:first-of-type {
+	border-top: none;
+	padding-top: 0;
+}
+
+.blackburn-label {
+	display: block;
+	font-weight: 600;
+	margin-top: 16px;
+	margin-bottom: 8px;
+}
+
+.blackburn-input,
+.blackburn-textarea {
+	width: 100%;
+	box-sizing: border-box;
+	border-radius: 4px;
+}
+
+.blackburn-textarea {
+	min-height: 200px;
+	resize: vertical;
+	padding: 12px;
+}

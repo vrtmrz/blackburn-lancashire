@@ -1,90 +1,117 @@
-# Obsidian Sample Plugin
+# Blackburn Lancashire
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+The plugin that receives your quick jot logs and fills four-thousand-holes in
+your life.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+Blackburn Lancashire is an Obsidian plugin for quick daily memo capture. It stores short memo entries in plain Markdown daily files, keeps revision history through metadata comments, and provides a searchable memo list in an Obsidian view.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
 
-## First time developing plugins?
+## Installation
 
-Quick starting guide for new plugin devs:
+Still for a while, or until other plug-ins are stable. this plugin is only
+available as a home-brew option. To install it, use BRAT, please.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+## Features
 
-## Releasing new releases
+- Capture new memos from the command palette, ribbon icon, or memo list view.
+- Store entries in daily Markdown files named `YYYY-MM-DD.md`.
+- Keep each entry under `## YYYY-MM-DD` and `### HH:mm` headings.
+- Preserve revision history by expiring old entries instead of deleting text.
+- Search body text and inline tags with case-insensitive, tokenised AND matching.
+- **Filter results** by a specific "Before" date.
+- **Collapsible search area** to maximise vertical space for memo browsing.
+- Switch list display between line, parent, and day modes.
+- **Grouped display** by date headers with integrated checkbox toggles to expand or collapse daily entries.
+- Hide expired entries by default, with a view toggle for history checks.
+- Load the list incrementally for lighter behaviour on larger memo sets.
+- **Geolocation support**: capture Latitude and Longitude for each entry when enabled.
+- **Native integration**: utilise Obsidian's native `Menu` API for entry actions.
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+## Commands and Shortcuts
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+- `Open memo list`: opens the memo ItemView.
+- `New memo`: opens the memo capture modal.
 
-## Adding your plugin to the community plugin list
+### Keyboard Shortcuts (in Modal)
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+- `Ctrl + Enter` (or `Cmd + Enter`): **Save and close** the modal.
+- `Ctrl + Shift + Enter`: **Save** and continue (clears the body for the next entry).
 
-## How to use
+The ribbon icon also opens the memo list. If the list is already open, the existing view is revealed. The body textarea is automatically focused when the modal opens.
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+## Settings
 
-## Manually installing the plugin
+The plugin currently exposes the following settings:
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+- `Save folder`: folder used for daily memo files. The default is `daily`.
+- `Identification tag`: frontmatter tag used to recognise memo files. The default is `daily-log`.
+- `Enable Geolocation`: capture Latitude and Longitude when saving a memo.
 
-## Improve code quality with eslint
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
+## Storage Format
 
-## Funding URL
+With the default settings, memo files are written under `daily/` and use this shape:
 
-You can include funding URLs where people who use your plugin can financially support it.
+```markdown
+---
+tags: [daily-log]
+---
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+## 2026-05-23
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
+### 11:45
+
+- A memo body line
+- #idea
+
+%%memo-meta: e=2026-05-23 11:45; u=2026-05-23 11:45; la=35.6895; lo=139.6917%%
 ```
 
-If you have multiple URLs, you can also do:
+Metadata fields are:
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
+- `e`: expression time, the time represented by the memo.
+- `u`: update time, the time when the current entry was saved.
+- `x`: expiry time, added when an entry is invalidated by revision or deletion.
+- `la`: latitude coordinate (if geolocation is enabled).
+- `lo`: longitude coordinate (if geolocation is enabled).
+
+When an entry is revised, the old entry remains in place and receives `x`. The replacement entry is appended to the selected date and time, inheriting the original `e` value and receiving a fresh `u` value.
+
+## Search and Filter Behaviour
+
+Search is case-insensitive and uses partial matching. Half-width and full-width spaces split the query into tokens, and all tokens must match either the body or inline tags.
+
+The **Before** filter allows you to restrict the list to memos recorded on or before a selected date. The entire search and filter section can be collapsed to focus on reading.
+
+Display modes are:
+
+- `Line`: show matched entries only.
+- `Parent`: show the date and time context for each matched entry.
+- `Day`: show all entries on every date that has at least one match.
+
+Entries are grouped under large date headers. These headers utilise a checkbox toggle to expand or collapse the day's entries in `Parent` mode.
+
+## Development
+
+Install dependencies with npm:
+
+```bash
+npm install
 ```
 
-## API Documentation
+Run a production build:
 
-See https://docs.obsidian.md
+```bash
+npm run build
+```
+
+Run a development build:
+
+```bash
+npm run dev
+```
+
+The release artefacts expected by Obsidian are `main.js`, `manifest.json`, and `styles.css`.
+
+## Notes
+
+The first version uses Obsidian standard UI components: `ItemView`, `Modal`, and `PluginSettingTab`. No network requests or telemetry are used.

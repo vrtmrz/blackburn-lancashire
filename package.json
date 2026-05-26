@@ -1,7 +1,7 @@
 {
-	"name": "obsidian-sample-plugin",
+	"name": "blackburn-lancashire",
 	"version": "1.0.0",
-	"description": "This is a sample plugin for Obsidian (https://obsidian.md)",
+	"description": "Daily memo capture and revision workflow for Obsidian.",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
