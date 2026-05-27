@@ -27,6 +27,8 @@ export class MemoSettingTab extends PluginSettingTab {
 			.setName("Save folder")
 			.setDesc("Folder used for daily memo files.")
 			.addText(text => text
+				// This is a placeholder, and indicates the tag. hence, it should not be sentence case.
+				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				.setPlaceholder("daily")
 				.setValue(this.plugin.settings.saveFolder)
 				.onChange(async (value) => {
@@ -38,6 +40,8 @@ export class MemoSettingTab extends PluginSettingTab {
 			.setName("Identification tag")
 			.setDesc("Frontmatter tag used to recognise memo files.")
 			.addText(text => text
+				// This is a placeholder, and indicates the tag. hence, it should not be sentence case.
+				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				.setPlaceholder("daily-log")
 				.setValue(this.plugin.settings.identificationTag)
 				.onChange(async (value) => {
