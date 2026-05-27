@@ -1,6 +1,6 @@
 {
 	"name": "blackburn-lancashire",
-	"version": "0.0.1",
+	"version": "0.0.3",
 	"description": "Daily memo capture and revision workflow for Obsidian.",
 	"main": "main.js",
 	"type": "module",
