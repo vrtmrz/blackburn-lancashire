@@ -2,7 +2,7 @@
 	display: flex;
 	flex-direction: column;
 	height: 100%;
-	gap: 16px;
+	gap: 4px;
 	padding: 16px;
 }
 
@@ -64,6 +64,27 @@
 	min-width: 0;
 }
 
+.blackburn-search-clear {
+	flex: 0 0 auto;
+	background: transparent;
+	border: none;
+	padding: 4px;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--text-muted);
+}
+
+.blackburn-search-clear:hover {
+	color: var(--text-normal);
+	background: var(--background-modifier-hover);
+}
+
+.blackburn-search-clear.is-hidden {
+	display: none;
+}
+
 .blackburn-date-filter-container {
 	display: flex;
 	align-items: center;
@@ -80,6 +101,7 @@
 	color: var(--text-muted);
 	white-space: nowrap;
 }
+
 .blackburn-select {
 	flex: 0 0 auto;
 }
@@ -98,7 +120,7 @@
 	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
 	text-align: center;
-	padding: 12px 0;
+	padding: 4px 0;
 }
 
 .blackburn-list {
@@ -106,14 +128,15 @@
 	padding-right: 8px;
 	display: flex;
 	flex-direction: column;
-	gap: 12px;
+	gap: 2px;
 }
 
 .blackburn-entry,
 .blackburn-day-expanded {
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	padding: 16px;
+	/* border: 1px solid var(--background-modifier-border); */
+	/* border-radius: 8px; */
+	border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 55%, transparent);
+	padding: 4px 8px;
 	background: var(--background-primary);
 	transition: background-color 0.2s ease;
 }
@@ -134,7 +157,7 @@
 .blackburn-date-header {
 	margin: 24px 0 12px;
 	padding-bottom: 8px;
-	border-bottom: 1px solid var(--background-modifier-border-focus);
+	border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border-focus) 60%, transparent);
 }
 
 .blackburn-date-group-label {
@@ -161,21 +184,33 @@
 .blackburn-date-group-label:hover .blackburn-date-group-text {
 	color: var(--interactive-accent);
 }
+
 .blackburn-entry-header {
 	display: flex;
-	flex-wrap: wrap;
+	flex-wrap: nowrap;
 	align-items: center;
 	gap: 8px;
-	margin-bottom: 12px;
+	/* margin-bottom: 12px; */
 }
 
 .blackburn-time {
 	font-weight: 600;
 	color: var(--text-accent);
+	min-width: 4.5em;
+	display: inline-block;
+	font-variant-numeric: tabular-nums;
+}
+
+.blackburn-time.is-duplicate-time {
+	visibility: hidden;
 }
 
 .blackburn-updated,
 .blackburn-expired {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: inline-block;
 	color: var(--text-muted);
 	font-size: var(--font-ui-smaller);
 }
@@ -219,7 +254,7 @@
 }
 
 .blackburn-day-entry {
-	border-top: 1px solid var(--background-modifier-border);
+	border-top: 1px solid color-mix(in srgb, var(--background-modifier-border) 55%, transparent);
 	padding: 12px 0;
 }
 
@@ -243,7 +278,49 @@
 }
 
 .blackburn-textarea {
-	min-height: 200px;
+	/* min-height: 200px; */
+	height: 150px;
+	min-height: 4em;
 	resize: vertical;
 	padding: 12px;
+	flex-grow: 1;
+	flex-shrink: 1;
+
+}
+
+.blackburn-lefty-button {
+	margin-right: auto;
+}
+
+.blackburn-modal {
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	/* padding-bottom: var(--keyboard-height, 0px); */
+	height: 100%;
+	padding: 2px 2px var(--keyboard-height, 2px) 2px;
+}
+
+.blackburn-input[type="datetime-local"] {
+	width: auto;
+}
+
+.blackburn-modal .setting-item-control {
+	flex-wrap: wrap;
+}
+
+.blackburn-modal .setting-item-control button {
+	width: auto;
+}
+
+.blackburn-modal .setting-item-control button.blackburn-lefty-button {
+	margin-right: auto;
+}
+
+.is-phone .modal .blackburn-modal .setting-item-control button {
+	width: auto;
+}
+
+.is-phone .modal .blackburn-modal .setting-item-control button.blackburn-lefty-button {
+	margin-right: auto;
 }

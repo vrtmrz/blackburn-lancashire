@@ -1,9 +1,9 @@
-import {Notice, Plugin, WorkspaceLeaf} from "obsidian";
-import {MemoModal} from "./modal";
-import {DEFAULT_SETTINGS, MemoSettingTab} from "./settings";
-import {MemoStore} from "./store";
-import {MemoPluginSettings} from "./types";
-import {MEMO_VIEW_TYPE, MemoView} from "./view";
+import { Notice, Plugin, WorkspaceLeaf } from "obsidian";
+import { MemoModal } from "./modal";
+import { DEFAULT_SETTINGS, MemoSettingTab } from "./settings";
+import { MemoStore } from "./store";
+import { MemoPluginSettings } from "./types";
+import { MEMO_VIEW_TYPE, MemoView } from "./view";
 
 export default class BlackburnLancashirePlugin extends Plugin {
 	settings: MemoPluginSettings = DEFAULT_SETTINGS;
@@ -13,13 +13,13 @@ export default class BlackburnLancashirePlugin extends Plugin {
 
 		this.registerView(MEMO_VIEW_TYPE, (leaf: WorkspaceLeaf) => new MemoView(leaf, this));
 
-		this.addRibbonIcon("notebook-pen", "Open memos", () => {
+		this.addRibbonIcon("notebook-pen", "Open blackburn", () => {
 			void this.activateMemoView();
 		});
 
 		this.addCommand({
 			id: "open-memo-list",
-			name: "Open memo list",
+			name: "Open blackburn",
 			callback: () => {
 				void this.activateMemoView();
 			},
@@ -27,7 +27,7 @@ export default class BlackburnLancashirePlugin extends Plugin {
 
 		this.addCommand({
 			id: "new-memo",
-			name: "New memo",
+			name: "New jot",
 			callback: () => {
 				void this.openNewMemoModal();
 			},
@@ -36,7 +36,7 @@ export default class BlackburnLancashirePlugin extends Plugin {
 		this.addSettingTab(new MemoSettingTab(this.app, this));
 	}
 
-	onunload(): void {}
+	onunload(): void { }
 
 	createStore(): MemoStore {
 		return new MemoStore(this.app, this.settings);
@@ -64,7 +64,7 @@ export default class BlackburnLancashirePlugin extends Plugin {
 			return;
 		}
 
-		await leaf.setViewState({type: MEMO_VIEW_TYPE, active: true});
+		await leaf.setViewState({ type: MEMO_VIEW_TYPE, active: true });
 		await this.app.workspace.revealLeaf(leaf);
 	}
 

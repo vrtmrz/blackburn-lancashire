@@ -1,11 +1,11 @@
-import {App, Notice, TFile, normalizePath} from "obsidian";
-import {MemoDraft, MemoEntry, MemoMetadata, MemoPluginSettings} from "./types";
+import { App, Notice, TFile, normalizePath } from "obsidian";
+import { MemoDraft, MemoEntry, MemoMetadata, MemoPluginSettings } from "./types";
 
 const META_PREFIX = "%%memo-meta:";
 const META_PATTERN = /^%%memo-meta:\s*e=([^;]+);\s*u=([^;%]+)(?:;\s*x=([^;%]+))?(?:;\s*la=([^;%]+))?(?:;\s*lo=([^;%]+))?%%$/;
 
 export class MemoStore {
-	constructor(private readonly app: App, private readonly settings: MemoPluginSettings) {}
+	constructor(private readonly app: App, private readonly settings: MemoPluginSettings) { }
 
 	async listEntries(): Promise<MemoEntry[]> {
 		const files = this.getCandidateFiles();
@@ -20,27 +20,40 @@ export class MemoStore {
 			entries.push(...this.parseFile(file, content));
 		}
 
-		return entries.sort((leftEntry, rightEntry) => {
-			return rightEntry.metadata.updatedTime.localeCompare(leftEntry.metadata.updatedTime);
-		});
+		return entries.sort(compareEntriesByExpressionTimeDesc);
 	}
 
 	async collectTags(): Promise<string[]> {
-		const counts = new Map<string, number>();
+		const tagCounts = new Map<string, number>();
+		const combinationCounts = new Map<string, number>();
 		const entries = await this.listEntries();
 
 		for (const entry of entries) {
 			for (const tag of entry.tags) {
-				counts.set(tag, (counts.get(tag) ?? 0) + 1);
+				tagCounts.set(tag, (tagCounts.get(tag) ?? 0) + 1);
+			}
+
+			if (entry.tags.length > 1) {
+				const combination = [...entry.tags].sort((leftTag, rightTag) => leftTag.localeCompare(rightTag)).join(" ");
+				combinationCounts.set(combination, (combinationCounts.get(combination) ?? 0) + 1);
 			}
 		}
 
-		return Array.from(counts.entries())
+		const sortedCombinations = Array.from(combinationCounts.entries())
+			.sort((leftEntry, rightEntry) => {
+				const countDifference = rightEntry[1] - leftEntry[1];
+				return countDifference !== 0 ? countDifference : leftEntry[0].localeCompare(rightEntry[0]);
+			})
+			.map(([combination]) => combination);
+
+		const sortedTags = Array.from(tagCounts.entries())
 			.sort((leftEntry, rightEntry) => {
 				const countDifference = rightEntry[1] - leftEntry[1];
 				return countDifference !== 0 ? countDifference : leftEntry[0].localeCompare(rightEntry[0]);
 			})
 			.map(([tag]) => tag);
+
+		return [...sortedCombinations, ...sortedTags];
 	}
 
 	async createEntry(draft: MemoDraft): Promise<void> {
@@ -71,7 +84,7 @@ export class MemoStore {
 
 	async reviseEntry(entry: MemoEntry, draft: MemoDraft): Promise<void> {
 		await this.expireEntry(entry);
-		await this.createEntry({...draft, expressionTime: entry.metadata.expressionTime});
+		await this.createEntry({ ...draft, expressionTime: entry.metadata.expressionTime });
 	}
 
 	async expireEntry(entry: MemoEntry): Promise<void> {
@@ -222,17 +235,45 @@ export function parseDateTimeInput(value: string): string {
 	return value.replace("T", " ").slice(0, 16);
 }
 
+export function compareEntriesByExpressionTimeDesc(leftEntry: MemoEntry, rightEntry: MemoEntry): number {
+	const expressionDifference = rightEntry.metadata.expressionTime.localeCompare(leftEntry.metadata.expressionTime);
+	if (expressionDifference !== 0) {
+		return expressionDifference;
+	}
+
+	const updatedDifference = rightEntry.metadata.updatedTime.localeCompare(leftEntry.metadata.updatedTime);
+	if (updatedDifference !== 0) {
+		return updatedDifference;
+	}
+
+	const dateDifference = rightEntry.date.localeCompare(leftEntry.date);
+	if (dateDifference !== 0) {
+		return dateDifference;
+	}
+
+	const timeDifference = rightEntry.time.localeCompare(leftEntry.time);
+	if (timeDifference !== 0) {
+		return timeDifference;
+	}
+
+	return rightEntry.id.localeCompare(leftEntry.id);
+}
+
 function normaliseFolder(folder: string): string {
 	return normalizePath(folder.trim()).replace(/^\/+|\/+$/g, "");
 }
 
-function splitDateTime(dateTime: string): {date: string; time: string} {
-	return {date: dateTime.slice(0, 10), time: dateTime.slice(11, 16)};
+function splitDateTime(dateTime: string): { date: string; time: string } {
+	return { date: dateTime.slice(0, 10), time: dateTime.slice(11, 16) };
 }
 
 function buildEntryLines(body: string, tags: string[], metadata: MemoMetadata): string[] {
-	const lines = normaliseBodyLines(body).map((line) => {
-		return /^\s*[-*]\s+/.test(line) ? line : `- ${line}`;
+	const normalisedBody = normaliseBodyLines(body);
+	const lines = normalisedBody.map((line, index) => {
+		if (index === 0) {
+			return /^\s*[-*]\s+/.test(line) ? line : `- ${line}`;
+		}
+		return line.length === 0 ? line : `  ${line}`;
 	});
 	const normalisedTags = normaliseTags(tags);
 

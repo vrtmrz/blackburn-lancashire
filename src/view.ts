@@ -1,7 +1,7 @@
 import { ItemView, Menu, Notice, WorkspaceLeaf, setIcon } from "obsidian";
 import type BlackburnLancashirePlugin from "./main";
 import { MemoModal } from "./modal";
-import { MemoStore } from "./store";
+import { compareEntriesByExpressionTimeDesc, MemoStore } from "./store";
 import { filterMemoEntries, resolveDisplayEntries } from "./search";
 import { MemoEntry, SearchMode } from "./types";
 
@@ -21,8 +21,11 @@ export class MemoView extends ItemView {
 	private displayLimit = INITIAL_LIMIT;
 	private expandedDates = new Set<string>();
 	private debounceTimer: number | null = null;
+	private isRefreshing = false;
 	private listEl?: HTMLElement;
 	private statusEl?: HTMLElement;
+	private searchInputEl?: HTMLInputElement;
+	private searchClearEl?: HTMLButtonElement;
 
 	constructor(leaf: WorkspaceLeaf, private readonly plugin: BlackburnLancashirePlugin) {
 		super(leaf);
@@ -34,7 +37,7 @@ export class MemoView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Memos";
+		return "Blackburn";
 	}
 
 	async onOpen(): Promise<void> {
@@ -58,6 +61,14 @@ export class MemoView extends ItemView {
 			}
 		});
 
+		this.registerEvent(
+			this.app.workspace.on("active-leaf-change", (leaf) => {
+				if (leaf === this.leaf) {
+					void this.refresh();
+				}
+			}),
+		);
+
 		await this.refresh();
 	}
 
@@ -68,11 +79,20 @@ export class MemoView extends ItemView {
 	}
 
 	async refresh(): Promise<void> {
-		this.setStatus("Loading...");
-		this.entries = await this.store.listEntries();
-		this.tagCandidates = await this.store.collectTags();
-		this.displayLimit = INITIAL_LIMIT;
-		this.renderList();
+		if (this.isRefreshing) {
+			return;
+		}
+
+		this.isRefreshing = true;
+		try {
+			this.setStatus("Loading...");
+			this.entries = await this.store.listEntries();
+			this.tagCandidates = await this.store.collectTags();
+			this.displayLimit = INITIAL_LIMIT;
+			this.renderList();
+		} finally {
+			this.isRefreshing = false;
+		}
 	}
 
 	private renderToolbar(rootEl: HTMLElement): void {
@@ -103,9 +123,27 @@ export class MemoView extends ItemView {
 		searchInput.placeholder = "Search keywords...";
 		searchInput.addClass("blackburn-search");
 		searchInput.value = this.query;
+		this.searchInputEl = searchInput;
+
+		const clearButton = searchRow.createEl("button", { cls: "blackburn-search-clear clickable-icon" });
+		setIcon(clearButton, "x");
+		if (this.query.length === 0) {
+			clearButton.addClass("is-hidden");
+		}
+		this.searchClearEl = clearButton;
+
 		searchInput.addEventListener("input", () => {
 			this.query = searchInput.value;
+			clearButton.toggleClass("is-hidden", this.query.length === 0);
 			this.scheduleSearch();
+		});
+
+		clearButton.addEventListener("click", () => {
+			this.query = "";
+			searchInput.value = "";
+			clearButton.addClass("is-hidden");
+			this.displayLimit = INITIAL_LIMIT;
+			this.renderList();
 		});
 
 		const filterRow = searchContentEl.createDiv({ cls: "blackburn-toolbar-row" });
@@ -196,13 +234,17 @@ export class MemoView extends ItemView {
 		const expandedRenderedDates = new Set<string>();
 
 		let lastDate = "";
+		let previousTimeInDate: string | null = null;
 		for (const entry of visibleEntries) {
 			if (entry.date !== lastDate) {
 				this.renderDateHeader(entry.date);
 				lastDate = entry.date;
+				previousTimeInDate = null;
 			}
 
-			this.renderEntry(entry, matchedEntries.some((matchedEntry) => matchedEntry.id === entry.id));
+			const showTime = entry.time !== previousTimeInDate;
+			this.renderEntry(entry, matchedEntries.some((matchedEntry) => matchedEntry.id === entry.id), showTime);
+			previousTimeInDate = entry.time;
 			if (this.plugin.settings.searchMode === "parent" && this.expandedDates.has(entry.date) && !expandedRenderedDates.has(entry.date)) {
 				expandedRenderedDates.add(entry.date);
 				this.renderExpandedDay(entry.date);
@@ -242,7 +284,7 @@ export class MemoView extends ItemView {
 		});
 	}
 
-	private renderEntry(entry: MemoEntry, isMatched: boolean): void {
+	private renderEntry(entry: MemoEntry, isMatched: boolean, showTime: boolean): void {
 		if (!this.listEl) {
 			return;
 		}
@@ -257,7 +299,10 @@ export class MemoView extends ItemView {
 		}
 
 		const headerEl = itemEl.createDiv({ cls: "blackburn-entry-header" });
-		headerEl.createSpan({ cls: "blackburn-time", text: entry.time });
+		const timeEl = headerEl.createSpan({ cls: "blackburn-time", text: entry.time });
+		if (!showTime) {
+			timeEl.addClass("is-duplicate-time");
+		}
 
 		headerEl.createSpan({ cls: "blackburn-updated", text: `updated ${entry.metadata.updatedTime}` });
 		if (entry.metadata.expiredTime) {
@@ -275,13 +320,18 @@ export class MemoView extends ItemView {
 
 		const entries = this.entries
 			.filter((entry) => entry.date === date && (this.includeExpired || !entry.metadata.expiredTime))
-			.sort((leftEntry, rightEntry) => leftEntry.time.localeCompare(rightEntry.time));
+			.sort(compareEntriesByExpressionTimeDesc);
 
 		const dayEl = this.listEl.createDiv({ cls: "blackburn-day-expanded" });
 		dayEl.createDiv({ cls: "blackburn-day-title", text: `${date} entries` });
+		let previousTime: string | null = null;
 		for (const entry of entries) {
 			const rowEl = dayEl.createDiv({ cls: "blackburn-day-entry" });
-			rowEl.createSpan({ cls: "blackburn-time", text: entry.time });
+			const timeEl = rowEl.createSpan({ cls: "blackburn-time", text: entry.time });
+			if (entry.time === previousTime) {
+				timeEl.addClass("is-duplicate-time");
+			}
+			previousTime = entry.time;
 			rowEl.createEl("pre", { cls: "blackburn-body", text: entry.body });
 		}
 	}
@@ -290,7 +340,7 @@ export class MemoView extends ItemView {
 		const menuButton = parentEl.createEl("button", { cls: "blackburn-menu-button clickable-icon" });
 		setIcon(menuButton, "ellipsis-vertical");
 
-		menuButton.addEventListener("click", (event: MouseEvent) => {
+		menuButton.addEventListener("click", (event: MouseEvent | KeyboardEvent) => {
 			const menu = new Menu();
 
 			menu.addItem((item) =>
@@ -300,18 +350,80 @@ export class MemoView extends ItemView {
 					.onClick(() => this.openRevisionModal(entry)),
 			);
 
+			if (entry.tags.length > 0) {
+				menu.addItem((item) =>
+					item
+						.setTitle("Create new with same tags")
+						.setIcon("lucide-plus")
+						.onClick(() => this.openNewModalWithTags(entry.tags)),
+				);
+
+				menu.addItem((item) =>
+					item
+						.setTitle("Search by tags")
+						.setIcon("lucide-search")
+						.onClick((evt) => {
+							const tagMenu = new Menu();
+							for (const tag of entry.tags) {
+								tagMenu.addItem((subItem) =>
+									subItem
+										.setTitle(tag)
+										.setIcon("lucide-tag")
+										.onClick(() => this.applyTagSearch(tag)),
+								);
+							}
+							if (entry.tags.length > 1) {
+								const combination = entry.tags.join(" ");
+								tagMenu.addItem((subItem) =>
+									subItem
+										.setTitle(combination)
+										.setIcon("lucide-tags")
+										.onClick(() => this.applyTagSearch(combination)),
+								);
+							}
+							if (evt instanceof MouseEvent) {
+								tagMenu.showAtPosition({ x: evt.clientX, y: evt.clientY });
+							} else {
+								const rect = (evt.target as HTMLElement).getBoundingClientRect();
+								tagMenu.showAtPosition({ x: rect.left, y: rect.top });
+							}
+						}),
+				);
+			}
+
 			menu.addItem((item) =>
 				item
 					.setTitle("Invalidate")
 					.setIcon("lucide-trash-2")
-					.onClick(async () => {
-						await this.store.expireEntry(entry);
-						new Notice("Memo invalidated.");
-						await this.refresh();
+					.onClick((evt) => {
+						const confirmMenu = new Menu();
+						confirmMenu.addItem((subItem) =>
+							subItem
+								.setTitle("Sure?")
+								.setIcon("lucide-check")
+								.setWarning(true)
+								.onClick(async () => {
+									await this.store.expireEntry(entry);
+									new Notice("Memo invalidated.");
+									await this.refresh();
+								}),
+						);
+						if (evt instanceof MouseEvent) {
+							confirmMenu.showAtPosition({ x: evt.clientX, y: evt.clientY });
+							return;
+						}
+						const rect = (evt.target as HTMLElement).getBoundingClientRect();
+						confirmMenu.showAtPosition({ x: rect.left, y: rect.top });
 					}),
 			);
 
-			menu.showAtMouseEvent(event);
+			if (event instanceof MouseEvent) {
+				menu.showAtPosition({ x: event.clientX, y: event.clientY });
+			} else {
+				const rect = (event.target as HTMLElement).getBoundingClientRect();
+				menu.showAtPosition({ x: rect.left, y: rect.top });
+			}
+			// menu.showAtMouseEvent(event);
 		});
 	}
 
@@ -327,6 +439,29 @@ export class MemoView extends ItemView {
 
 	private openNewModal(): void {
 		new MemoModal(this.app, this.store, {
+			tagCandidates: this.tagCandidates,
+			onSaved: async () => this.refresh(),
+		}).open();
+	}
+
+	private applyTagSearch(tagQuery: string): void {
+		this.query = tagQuery;
+		if (this.searchInputEl) {
+			this.searchInputEl.value = tagQuery;
+			this.searchClearEl?.toggleClass("is-hidden", tagQuery.length === 0);
+			if (this.plugin.settings.searchCollapsed) {
+				this.plugin.settings.searchCollapsed = false;
+				void this.plugin.saveSettings().then(() => this.onOpen());
+				return;
+			}
+		}
+		this.displayLimit = INITIAL_LIMIT;
+		this.renderList();
+	}
+
+	private openNewModalWithTags(tags: string[]): void {
+		new MemoModal(this.app, this.store, {
+			initialTags: [...tags],
 			tagCandidates: this.tagCandidates,
 			onSaved: async () => this.refresh(),
 		}).open();
