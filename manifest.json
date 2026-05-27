@@ -1,7 +1,7 @@
 {
 	"id": "blackburn-lancashire",
 	"name": "Blackburn Lancashire",
-	"version": "1.0.0",
+	"version": "0.0.1",
 	"minAppVersion": "0.15.0",
 	"description": "Daily memo capture and revision workflow for Obsidian.",
 	"author": "vorotamoroz",
