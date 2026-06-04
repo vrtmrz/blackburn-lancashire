@@ -70,7 +70,7 @@ export class MemoModal extends Modal {
 
 			const addBtn = tagContainer.createEl("button", {
 				cls: "blackburn-add-tag-button",
-				text: "+ Add tag",
+				text: "+ add tag",
 			});
 			addBtn.type = "button";
 			addBtn.addEventListener("click", () => {
