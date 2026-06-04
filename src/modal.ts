@@ -1,6 +1,7 @@
 import { App, Modal, Notice, Setting } from "obsidian";
 import { MemoEntry } from "./types";
 import { formatDateTime, formatDateTimeInput, parseDateTimeInput, MemoStore } from "./store";
+import { PopoverSelectString } from "./dialogs";
 
 export interface MemoModalOptions {
 	entry?: MemoEntry;
@@ -10,12 +11,17 @@ export interface MemoModalOptions {
 }
 
 export class MemoModal extends Modal {
+	private selectedTags: string[] = [];
+
 	constructor(
 		app: App,
 		private readonly store: MemoStore,
 		private readonly options: MemoModalOptions,
 	) {
 		super(app);
+		this.selectedTags = [
+			...(this.options.entry?.tags ?? this.options.initialTags ?? [])
+		];
 	}
 
 	onOpen(): void {
@@ -43,21 +49,67 @@ export class MemoModal extends Modal {
 
 		const tagLabel = wrapper.createEl("label", { text: "Tags" });
 		tagLabel.addClass("blackburn-label");
-		const tagInput = wrapper.createEl("input");
-		tagInput.type = "text";
-		tagInput.addClass("blackburn-input");
-		tagInput.placeholder = "#memo #idea";
-		tagInput.value = this.options.entry?.tags.join(" ") ?? this.options.initialTags?.join(" ") ?? "";
-		const datalistId = "blackburn-tag-candidates";
-		tagInput.setAttr("list", datalistId);
-		const datalist = wrapper.createEl("datalist");
-		datalist.id = datalistId;
-		for (const tagCandidate of this.options.tagCandidates) {
-			datalist.createEl("option", { value: tagCandidate });
-		}
+		const tagContainer = wrapper.createDiv({ cls: "blackburn-tag-container" });
 
-		const calloutDiv = wrapper.createDiv();
-		calloutDiv.style.marginTop = "12px";
+		const renderTags = () => {
+			tagContainer.empty();
+
+			for (let i = 0; i < this.selectedTags.length; i++) {
+				const tag = this.selectedTags[i];
+				if (!tag) continue;
+				const badge = tagContainer.createEl("a", { cls: "tag" });
+				badge.createSpan({ text: tag });
+				const removeBtn = badge.createSpan({ cls: "blackburn-tag-badge-remove", text: "×" });
+				removeBtn.addEventListener("click", (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					this.selectedTags.splice(i, 1);
+					renderTags();
+				});
+			}
+
+			const addBtn = tagContainer.createEl("button", {
+				cls: "blackburn-add-tag-button",
+				text: "+ Add tag",
+			});
+			addBtn.type = "button";
+			addBtn.addEventListener("click", () => {
+				const popover = new PopoverSelectString(
+					this.app,
+					"Select or type a tag to add",
+					"",
+					() => this.options.tagCandidates.filter((candidate) => {
+						const parts = candidate.split(/[ \u3000,]+/);
+						return !parts.every((part) => this.selectedTags.includes(part));
+					}),
+					(result) => {
+						if (result) {
+							const parsed = result
+								.split(/[ \u3000,]+/)
+								.map((t) => t.trim())
+								.filter((t) => t.length > 0)
+								.map((t) => (t.startsWith("#") ? t : `#${t}`));
+
+							let updated = false;
+							for (const tag of parsed) {
+								if (!this.selectedTags.includes(tag)) {
+									this.selectedTags.push(tag);
+									updated = true;
+								}
+							}
+							if (updated) {
+								renderTags();
+							}
+						}
+					}
+				);
+				popover.open();
+			});
+		};
+
+		renderTags();
+
+		const calloutDiv = wrapper.createDiv({ cls: "blackburn-callout" });
 		const calloutLabel = calloutDiv.createEl("label", { cls: "blackburn-checkbox" });
 		const calloutCheckbox = calloutLabel.createEl("input", { type: "checkbox" });
 		calloutCheckbox.checked = this.options.entry?.isCallout ?? false;
@@ -71,7 +123,7 @@ export class MemoModal extends Modal {
 			}
 
 			const targetDateTime = parseDateTimeInput(datetimeInput.value);
-			const tags = parseTags(tagInput.value);
+			const tags = [...this.selectedTags];
 			if (this.options.entry) {
 				await this.store.reviseEntry(this.options.entry, { body, tags, targetDateTime, asCallout: calloutCheckbox.checked });
 			} else {
@@ -91,7 +143,7 @@ export class MemoModal extends Modal {
 			}
 
 			const targetDateTime = parseDateTimeInput(datetimeInput.value);
-			const tags = parseTags(tagInput.value);
+			const tags = [...this.selectedTags];
 			if (this.options.entry) {
 				await this.store.reviseEntry(this.options.entry, { body, tags, targetDateTime, asCallout: calloutCheckbox.checked });
 				await this.options.onSaved();
@@ -137,11 +189,4 @@ export class MemoModal extends Modal {
 	onClose(): void {
 		this.contentEl.empty();
 	}
-}
-
-function parseTags(value: string): string[] {
-	return value
-		.split(/[ \u3000,]+/)
-		.map((tag) => tag.trim())
-		.filter((tag) => tag.length > 0);
 }
