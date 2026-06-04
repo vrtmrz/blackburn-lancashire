@@ -115,6 +115,7 @@ Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particula
 
 ## UX & copy guidelines (for UI text, commands, settings)
 
+- Use British English (BrE) spelling for all user-facing copy and code comments (e.g. 'normalise', 'recognise', 'colour').
 - Prefer sentence case for headings, buttons, and titles.
 - Use clear, action-oriented imperatives in step-by-step copy.
 - Use **bold** to indicate literal UI labels. Prefer "select" for interactions.
