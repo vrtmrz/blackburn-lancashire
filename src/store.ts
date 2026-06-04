@@ -74,7 +74,7 @@ export class MemoStore {
 			}
 		}
 
-		const entryLines = buildEntryLines(draft.body, draft.tags, metadata);
+		const entryLines = buildEntryLines(draft.body, draft.tags, metadata, draft.asCallout);
 		const file = await this.ensureDailyFile(target.date);
 		const content = await this.app.vault.read(file);
 		const nextContent = insertEntry(content, target.date, target.time, entryLines);
@@ -166,7 +166,20 @@ export class MemoStore {
 				const bodyLines = trimBlankLines(blockLines);
 				const body = bodyLines.join("\n");
 				const tags = extractTags(body);
-				const editableBody = removeTrailingTagOnlyLine(bodyLines).join("\n");
+				const activeBodyLines = removeTrailingTagOnlyLine(bodyLines);
+
+				let isCallout = false;
+				let finalEditableBodyLines = [...activeBodyLines];
+				if (activeBodyLines.length > 0 && activeBodyLines[0]) {
+					const firstLine = activeBodyLines[0];
+					const calloutMatch = firstLine.match(/^(?:\s*-\s+)?>\s*\[!([a-zA-Z0-9_-]+)\]/i);
+					if (calloutMatch) {
+						isCallout = true;
+						finalEditableBodyLines = activeBodyLines.slice(1).map(line => line.replace(/^\s*>\s?/, ""));
+					}
+				}
+				const editableBody = finalEditableBodyLines.join("\n");
+
 				entries.push({
 					id: `${file.path}:${lineIndex}:${metadata.updatedTime}`,
 					filePath: file.path,
@@ -180,6 +193,7 @@ export class MemoStore {
 					startLine: blockStart >= 0 ? blockStart : lineIndex,
 					endLine: lineIndex,
 					metaLine: lineIndex,
+					isCallout,
 				});
 
 				blockStart = -1;
@@ -267,14 +281,22 @@ function splitDateTime(dateTime: string): { date: string; time: string } {
 	return { date: dateTime.slice(0, 10), time: dateTime.slice(11, 16) };
 }
 
-function buildEntryLines(body: string, tags: string[], metadata: MemoMetadata): string[] {
+function buildEntryLines(body: string, tags: string[], metadata: MemoMetadata, asCallout?: boolean): string[] {
 	const normalisedBody = normaliseBodyLines(body);
-	const lines = normalisedBody.map((line, index) => {
-		if (index === 0) {
-			return /^\s*[-*]\s+/.test(line) ? line : `- ${line}`;
-		}
-		return line.length === 0 ? line : `  ${line}`;
-	});
+	let lines: string[];
+	if (asCallout) {
+		lines = [
+			"- > [!note]-",
+			...normalisedBody.map(line => `  > ${line}`)
+		];
+	} else {
+		lines = normalisedBody.map((line, index) => {
+			if (index === 0) {
+				return /^\s*[-*]\s+/.test(line) ? line : `- ${line}`;
+			}
+			return line.length === 0 ? line : `  ${line}`;
+		});
+	}
 	const normalisedTags = normaliseTags(tags);
 
 	if (normalisedTags.length > 0) {

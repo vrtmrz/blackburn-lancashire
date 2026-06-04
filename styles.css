@@ -217,7 +217,7 @@
 
 .blackburn-body {
 	margin: 0;
-	white-space: pre-wrap;
+	word-break: break-all;
 	font-family: var(--font-text);
 	line-height: 1.5;
 	font-size: var(--font-text-size);

@@ -29,6 +29,7 @@ export interface MemoEntry {
 	startLine: number;
 	endLine: number;
 	metaLine: number;
+	isCallout?: boolean;
 }
 
 export interface MemoDraft {
@@ -36,4 +37,5 @@ export interface MemoDraft {
 	tags: string[];
 	targetDateTime: string;
 	expressionTime?: string;
+	asCallout?: boolean;
 }

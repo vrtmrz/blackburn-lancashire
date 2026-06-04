@@ -56,6 +56,13 @@ export class MemoModal extends Modal {
 			datalist.createEl("option", { value: tagCandidate });
 		}
 
+		const calloutDiv = wrapper.createDiv();
+		calloutDiv.style.marginTop = "12px";
+		const calloutLabel = calloutDiv.createEl("label", { cls: "blackburn-checkbox" });
+		const calloutCheckbox = calloutLabel.createEl("input", { type: "checkbox" });
+		calloutCheckbox.checked = this.options.entry?.isCallout ?? false;
+		calloutLabel.createSpan({ text: "Add as callout" });
+
 		const handleSaveAndClose = async () => {
 			const body = bodyInput.value.trim();
 			if (body.length === 0) {
@@ -66,9 +73,9 @@ export class MemoModal extends Modal {
 			const targetDateTime = parseDateTimeInput(datetimeInput.value);
 			const tags = parseTags(tagInput.value);
 			if (this.options.entry) {
-				await this.store.reviseEntry(this.options.entry, { body, tags, targetDateTime });
+				await this.store.reviseEntry(this.options.entry, { body, tags, targetDateTime, asCallout: calloutCheckbox.checked });
 			} else {
-				await this.store.createEntry({ body, tags, targetDateTime });
+				await this.store.createEntry({ body, tags, targetDateTime, asCallout: calloutCheckbox.checked });
 			}
 
 			await this.options.onSaved();
@@ -86,13 +93,13 @@ export class MemoModal extends Modal {
 			const targetDateTime = parseDateTimeInput(datetimeInput.value);
 			const tags = parseTags(tagInput.value);
 			if (this.options.entry) {
-				await this.store.reviseEntry(this.options.entry, { body, tags, targetDateTime });
+				await this.store.reviseEntry(this.options.entry, { body, tags, targetDateTime, asCallout: calloutCheckbox.checked });
 				await this.options.onSaved();
 				this.close();
 				return;
 			}
 
-			await this.store.createEntry({ body, tags, targetDateTime });
+			await this.store.createEntry({ body, tags, targetDateTime, asCallout: calloutCheckbox.checked });
 			bodyInput.value = "";
 			await this.options.onSaved();
 			new Notice("Memo saved.");

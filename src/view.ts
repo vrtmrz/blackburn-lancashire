@@ -1,4 +1,4 @@
-import { ItemView, Menu, Notice, WorkspaceLeaf, setIcon } from "obsidian";
+import { ItemView, MarkdownRenderer, Menu, Notice, WorkspaceLeaf, setIcon } from "obsidian";
 import type BlackburnLancashirePlugin from "./main";
 import { MemoModal } from "./modal";
 import { compareEntriesByExpressionTimeDesc, MemoStore } from "./store";
@@ -310,7 +310,8 @@ export class MemoView extends ItemView {
 		}
 
 		this.renderActionMenu(headerEl, entry);
-		itemEl.createEl("pre", { cls: "blackburn-body", text: entry.body });
+		const bodyEl = itemEl.createDiv({ cls: "blackburn-body" });
+		void MarkdownRenderer.render(this.app, entry.body, bodyEl, entry.filePath, this);
 	}
 
 	private renderExpandedDay(date: string): void {
@@ -332,7 +333,8 @@ export class MemoView extends ItemView {
 				timeEl.addClass("is-duplicate-time");
 			}
 			previousTime = entry.time;
-			rowEl.createEl("pre", { cls: "blackburn-body", text: entry.body });
+			const bodyEl = rowEl.createDiv({ cls: "blackburn-body" });
+			void MarkdownRenderer.render(this.app, entry.body, bodyEl, entry.filePath, this);
 		}
 	}
 
